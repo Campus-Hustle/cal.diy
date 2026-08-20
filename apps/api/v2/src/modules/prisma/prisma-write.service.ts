@@ -45,6 +45,16 @@ export class PrismaWriteService implements OnModuleInit, OnModuleDestroy {
     const isE2E = options.e2e ?? false;
     const usePool = options.usePool ?? true;
 
+    let schema: string | undefined;
+    if (dbUrl) {
+      try {
+        schema = new URL(dbUrl).searchParams.get("schema") || undefined;
+      } catch {
+        // ignore invalid url
+      }
+    }
+    const adapterOptions = schema ? { schema } : undefined;
+
     if (usePool) {
       let maxWriteConnections = options.maxWriteConnections ?? DB_MAX_POOL_CONNECTION;
       if (isE2E) {
@@ -55,12 +65,13 @@ export class PrismaWriteService implements OnModuleInit, OnModuleDestroy {
         connectionString: dbUrl,
         max: maxWriteConnections,
         idleTimeoutMillis: 300000,
+        ...(schema && { options: `-c search_path=${schema}` }),
       });
 
-      const adapter = new PrismaPg(this.pool);
+      const adapter = new PrismaPg(this.pool, adapterOptions);
       this.prisma = new PrismaClient({ adapter });
     } else {
-      const adapter = new PrismaPg({ connectionString: dbUrl });
+      const adapter = new PrismaPg({ connectionString: dbUrl }, adapterOptions);
       this.prisma = new PrismaClient({
         adapter,
       });

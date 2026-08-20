@@ -1,0 +1,68 @@
+steps:
+  # 1. Build the Docker container image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+      - '-t'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_WEBAPP_URL=$_NEXT_PUBLIC_WEBAPP_URL'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_SENTRY_DSN=$_NEXT_PUBLIC_SENTRY_DSN'
+      - '.'
+
+  # 2. Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-sha'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+
+  # 3. Deploy to GCP Cloud Run (Service: calcom, Region: us-east4)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'calcom'
+      - '--image'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+      - '--region'
+      - '$_GCP_REGION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '3000'
+      - '--add-cloudsql-instances'
+      - '$_CLOUD_SQL_INSTANCE'
+      # Standard Environment Variables
+      - '--set-env-vars'
+      - 'NEXT_PUBLIC_WEBAPP_URL=$_NEXT_PUBLIC_WEBAPP_URL,NEXTAUTH_URL=$_NEXT_PUBLIC_WEBAPP_URL,CALCOM_TELEMETRY_DISABLED=1,NEXT_PUBLIC_SENTRY_DSN=$_NEXT_PUBLIC_SENTRY_DSN,SENTRY_TRACES_SAMPLE_RATE=$_SENTRY_TRACES_SAMPLE_RATE'
+      # Secrets from GCP Secret Manager
+      - '--set-secrets'
+      - 'DATABASE_URL=DATABASE_URL:latest,DATABASE_DIRECT_URL=DATABASE_DIRECT_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,CALENDSO_ENCRYPTION_KEY=CALENDSO_ENCRYPTION_KEY:latest'
+
+images:
+  - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+  - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+
+substitutions:
+  _GCP_REGION: 'us-east4'
+  _NEXT_PUBLIC_WEBAPP_URL: 'https://cal.yourdomain.com'
+  _NEXT_PUBLIC_SENTRY_DSN: ''
+  _SENTRY_TRACES_SAMPLE_RATE: '0.2'
+  _CLOUD_SQL_INSTANCE: '$PROJECT_ID:us-east4:calcom-db'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

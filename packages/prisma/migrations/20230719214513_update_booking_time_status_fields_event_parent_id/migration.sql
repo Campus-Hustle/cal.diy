@@ -2,7 +2,7 @@
 
 -- DROP VIEW public."BookingsTimeStatus";
 
-CREATE OR REPLACE VIEW public."BookingTimeStatus"
+CREATE OR REPLACE VIEW BookingTimeStatus
  AS
  SELECT "Booking".id,
     "Booking".uid,
@@ -30,6 +30,6 @@ CREATE OR REPLACE VIEW public."BookingTimeStatus"
    FROM "Booking"
     LEFT JOIN "EventType" et ON "Booking"."eventTypeId" = et.id
 	  LEFT JOIN "Membership" mb ON "mb"."userId" = "Booking"."userId";
- 
+
 
 

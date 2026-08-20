@@ -1,6 +1,6 @@
-CREATE OR REPLACE VIEW public."BookingTimeStatus"
+CREATE OR REPLACE VIEW BookingTimeStatus
 AS
-SELECT 
+SELECT
     "Booking".id,
     "Booking".uid,
     "Booking"."eventTypeId",
