@@ -5,13 +5,19 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:$COMMIT_SHA'
       - '-t'
-      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:latest'
       - '--build-arg'
       - 'NEXT_PUBLIC_WEBAPP_URL=$_NEXT_PUBLIC_WEBAPP_URL'
       - '--build-arg'
       - 'NEXT_PUBLIC_SENTRY_DSN=$_NEXT_PUBLIC_SENTRY_DSN'
+      - '--build-arg'
+      - 'CALCOM_TELEMETRY_DISABLED=1'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_WEBSITE_TERMS_URL=$_NEXT_PUBLIC_WEBSITE_TERMS_URL'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL=$_NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL'
       - '.'
 
   # 2. Push the Docker image to Artifact Registry
@@ -19,13 +25,13 @@ steps:
     id: 'push-sha'
     args:
       - 'push'
-      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-latest'
     args:
       - 'push'
-      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:latest'
 
   # 3. Deploy to GCP Cloud Run (Service: calcom, Region: us-east4)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -36,7 +42,7 @@ steps:
       - 'deploy'
       - 'calcom'
       - '--image'
-      - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:$COMMIT_SHA'
       - '--region'
       - '$_GCP_REGION'
       - '--platform'
@@ -48,14 +54,14 @@ steps:
       - '$_CLOUD_SQL_INSTANCE'
       # Standard Environment Variables
       - '--set-env-vars'
-      - 'NEXT_PUBLIC_WEBAPP_URL=$_NEXT_PUBLIC_WEBAPP_URL,NEXTAUTH_URL=$_NEXT_PUBLIC_WEBAPP_URL,CALCOM_TELEMETRY_DISABLED=1,NEXT_PUBLIC_SENTRY_DSN=$_NEXT_PUBLIC_SENTRY_DSN,SENTRY_TRACES_SAMPLE_RATE=$_SENTRY_TRACES_SAMPLE_RATE'
+      - 'NEXT_PUBLIC_WEBAPP_URL=$_NEXT_PUBLIC_WEBAPP_URL,NEXTAUTH_URL=$_NEXT_PUBLIC_WEBAPP_URL,CALCOM_TELEMETRY_DISABLED=1,NEXT_PUBLIC_SENTRY_DSN=$_NEXT_PUBLIC_SENTRY_DSN,SENTRY_TRACES_SAMPLE_RATE=$_SENTRY_TRACES_SAMPLE_RATE,NEXT_PUBLIC_WEBSITE_TERMS_URL=$_NEXT_PUBLIC_WEBSITE_TERMS_URL,NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL=$_NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL,EMAIL_FROM=$_EMAIL_FROM,EMAIL_FROM_NAME=$_EMAIL_FROM_NAME,EMAIL_SERVER_HOST=$_EMAIL_SERVER_HOST,EMAIL_SERVER_PORT=$_EMAIL_SERVER_PORT,EMAIL_SERVER_USER=$_EMAIL_SERVER_USER'
       # Secrets from GCP Secret Manager
       - '--set-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest,DATABASE_DIRECT_URL=DATABASE_DIRECT_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,CALENDSO_ENCRYPTION_KEY=CALENDSO_ENCRYPTION_KEY:latest'
+      - 'DATABASE_URL=DATABASE_URL:latest,DATABASE_DIRECT_URL=DATABASE_DIRECT_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,CALENDSO_ENCRYPTION_KEY=CALENDSO_ENCRYPTION_KEY:latest,EMAIL_SERVER_PASSWORD=RESEND_API_KEY:latest'
 
 images:
-  - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:$COMMIT_SHA'
-  - 'us-east4-docker.pkg.dev/$PROJECT_ID/calcom-repo/calcom:latest'
+  - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:$COMMIT_SHA'
+  - 'us-east4-docker.pkg.dev/$PROJECT_ID/campus-hustle/calcom:latest'
 
 substitutions:
   _GCP_REGION: 'us-east4'
@@ -63,6 +69,13 @@ substitutions:
   _NEXT_PUBLIC_SENTRY_DSN: ''
   _SENTRY_TRACES_SAMPLE_RATE: '0.2'
   _CLOUD_SQL_INSTANCE: '$PROJECT_ID:us-east4:calcom-db'
+  _NEXT_PUBLIC_WEBSITE_TERMS_URL: ''
+  _NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL: ''
+  _EMAIL_FROM: 'notifications@yourdomain.com'
+  _EMAIL_FROM_NAME: 'Cal.diy'
+  _EMAIL_SERVER_HOST: 'smtp.resend.com'
+  _EMAIL_SERVER_PORT: '465'
+  _EMAIL_SERVER_USER: 'resend'
 
 options:
   logging: CLOUD_LOGGING_ONLY
