@@ -236,7 +236,7 @@ export default defineConfig({
     version: "3",
     targets: [
       {
-        table: "public.users",
+        table: "calcom.users",
         rowLimit: 100,
       },
     ],

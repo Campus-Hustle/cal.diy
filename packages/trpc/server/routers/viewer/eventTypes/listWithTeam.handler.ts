@@ -10,17 +10,17 @@ type ListWithTeamOptions = {
 
 export const listWithTeamHandler = async ({ ctx }: ListWithTeamOptions) => {
   const userId = ctx.user.id;
-  const query = Prisma.sql`SELECT "public"."EventType"."id", "public"."EventType"."teamId", "public"."EventType"."title", "public"."EventType"."slug", "public"."EventType"."length", "j1"."name" as "teamName", "u"."username" as "username"
-    FROM "public"."EventType"
-    LEFT JOIN "public"."Team" AS "j1" ON ("j1"."id") = ("public"."EventType"."teamId")
-    LEFT JOIN "public"."users" AS "u" ON ("u"."id") = ("public"."EventType"."userId")
-    WHERE "public"."EventType"."userId" = ${userId}
+  const query = Prisma.sql`SELECT "EventType"."id", "EventType"."teamId", "EventType"."title", "EventType"."slug", "EventType"."length", "j1"."name" as "teamName", "u"."username" as "username"
+    FROM "EventType"
+    LEFT JOIN "Team" AS "j1" ON ("j1"."id") = ("EventType"."teamId")
+    LEFT JOIN "users" AS "u" ON ("u"."id") = ("EventType"."userId")
+    WHERE "EventType"."userId" = ${userId}
     UNION
-    SELECT "public"."EventType"."id", "public"."EventType"."teamId", "public"."EventType"."title", "public"."EventType"."slug", "public"."EventType"."length", "j1"."name" as "teamName", "u"."username" as "username"
-    FROM "public"."EventType"
-    INNER JOIN "public"."Team" AS "j1" ON ("j1"."id") = ("public"."EventType"."teamId")
-    INNER JOIN "public"."Membership" AS "t2" ON "t2"."teamId" = "j1"."id"
-    LEFT JOIN "public"."users" AS "u" ON ("u"."id") = ("public"."EventType"."userId")
+    SELECT "EventType"."id", "EventType"."teamId", "EventType"."title", "EventType"."slug", "EventType"."length", "j1"."name" as "teamName", "u"."username" as "username"
+    FROM "EventType"
+    INNER JOIN "Team" AS "j1" ON ("j1"."id") = ("EventType"."teamId")
+    INNER JOIN "Membership" AS "t2" ON "t2"."teamId" = "j1"."id"
+    LEFT JOIN "users" AS "u" ON ("u"."id") = ("EventType"."userId")
     WHERE "t2"."userId" = ${userId} AND "t2"."accepted" = true`;
 
   const result =
